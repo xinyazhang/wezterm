@@ -207,7 +207,6 @@ impl WaylandWindow {
                 )
             })?
             .wayland();
-        // eprintln!("[{}:{}]", file!(), line!());
 
         let window_id = conn.next_window_id();
         let pending_event = Arc::new(Mutex::new(PendingEvent::default()));
@@ -238,7 +237,6 @@ impl WaylandWindow {
             pixel_height: height,
             dpi: config.dpi.unwrap_or(crate::DEFAULT_DPI) as usize,
         };
-        eprintln!("[{}:{}] w {:?} h {:?} dpi {:?}", file!(), line!(), width, height, dimensions.dpi);
 
         let window = {
             let xdg_shell = &conn.wayland_state.borrow().xdg;
@@ -695,8 +693,6 @@ impl WaylandWindowInner {
                 pixel_width,
                 pixel_height,
             )?);
-            eprintln!("[{}:{}] w {:?} h {:?}", file!(), line!(), self.dimensions.pixel_width as i32,
-                self.dimensions.pixel_height as i32);
 
             log::trace!("WEGL Surface here {:?}", wegl_surface);
 
@@ -1055,7 +1051,6 @@ impl WaylandWindowInner {
                         let buf_w = ((buf_w_raw + scale - 1) / scale) * scale;
                         let buf_h = ((buf_h_raw + scale - 1) / scale) * scale;
                         let stride = buf_w.saturating_mul(4);
-                        eprintln!("[{}:{}] w {:?} h {:?}", file!(), line!(), buf_w, buf_h);
 
                         log::debug!(
                             "shm_pool: creating buffer w={} h={} stride={} scale_factor={} (raw: {}x{})",
@@ -1078,7 +1073,6 @@ impl WaylandWindowInner {
                                 self.surface().attach(Some(buffer.wl_buffer()), 0, 0);
                                 self.surface().set_buffer_scale(factor as i32);
                                 self.surface_factor = factor;
-                                eprintln!("[{}:{}] w {:?} h {:?}", file!(), line!(), buf_w, buf_h);
                             }
                         }
                     }
