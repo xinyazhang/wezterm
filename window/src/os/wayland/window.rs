@@ -1043,23 +1043,16 @@ impl WaylandWindowInner {
                         let mut pool = wayland_state.mem_pool.borrow_mut();
 
                         // Compute the real buffer size in pixels
-                        // Round dimensions to be exact multiples of the scale factor to satisfy
-                        // Wayland protocol requirement: buffer_size % buffer_scale == 0
-                        let scale = factor as i32;
-                        let buf_w_raw = (self.dimensions.pixel_width as f64 * factor).ceil() as i32;
-                        let buf_h_raw = (self.dimensions.pixel_height as f64 * factor).ceil() as i32;
-                        let buf_w = ((buf_w_raw + scale - 1) / scale) * scale;
-                        let buf_h = ((buf_h_raw + scale - 1) / scale) * scale;
+                        let buf_w = (self.dimensions.pixel_width as f64 * factor).ceil() as i32;
+                        let buf_h = (self.dimensions.pixel_height as f64 * factor).ceil() as i32;
                         let stride = buf_w.saturating_mul(4);
 
                         log::debug!(
-                            "shm_pool: creating buffer w={} h={} stride={} scale_factor={} (raw: {}x{})",
+                            "shm_pool: creating buffer w={} h={} stride={} scale_factor={}",
                             buf_w,
                             buf_h,
                             stride,
-                            factor,
-                            buf_w_raw,
-                            buf_h_raw
+                            factor
                         );
 
                         // Only create if dimensions are valid
