@@ -663,10 +663,35 @@ impl WaylandWindowInner {
                 .ok_or(anyhow!("Window does not exist"))?;
             let object_id = window.wl_surface().id();
 
+            // Get the current scale factor and align dimensions
+            let surface_udata = SurfaceUserData::from_wl(self.surface());
+            let factor = surface_udata.surface_data().scale_factor();
+            let mut pixel_width = self.dimensions.pixel_width as i32;
+            let mut pixel_height = self.dimensions.pixel_height as i32;
+
+            // Ensure dimensions are multiples of the integer scale factor
+            // to satisfy Wayland protocol requirement: buffer_size % buffer_scale == 0
+            if factor > 1 {
+                let pw_remainder = pixel_width % factor;
+                let ph_remainder = pixel_height % factor;
+                if pw_remainder != 0 || ph_remainder != 0 {
+                    pixel_width = pixel_width + (factor - pw_remainder) % factor;
+                    pixel_height = pixel_height + (factor - ph_remainder) % factor;
+                    log::debug!(
+                        "Aligning initial EGL surface for scale {}: {}x{} -> {}x{}",
+                        factor,
+                        self.dimensions.pixel_width,
+                        self.dimensions.pixel_height,
+                        pixel_width,
+                        pixel_height
+                    );
+                }
+            }
+
             wegl_surface = Some(WlEglSurface::new(
                 object_id,
-                self.dimensions.pixel_width as i32,
-                self.dimensions.pixel_height as i32,
+                pixel_width,
+                pixel_height,
             )?);
 
             log::trace!("WEGL Surface here {:?}", wegl_surface);
@@ -923,6 +948,28 @@ impl WaylandWindowInner {
                         if let Some(window) = self.window.as_ref() {
                             window.set_min_size(Some((min_width as u32, min_height as u32)));
                         }
+                    }
+                }
+
+                // Ensure pixel dimensions are multiples of the integer scale factor
+                // to satisfy Wayland protocol requirement: buffer_size % buffer_scale == 0
+                let int_factor = factor.round() as i32;
+                if int_factor > 1 {
+                    let pw_remainder = pixel_width % int_factor;
+                    let ph_remainder = pixel_height % int_factor;
+                    if pw_remainder != 0 || ph_remainder != 0 {
+                        let aligned_pixel_width = pixel_width + (int_factor - pw_remainder) % int_factor;
+                        let aligned_pixel_height = pixel_height + (int_factor - ph_remainder) % int_factor;
+                        log::debug!(
+                            "Aligning buffer dimensions for scale {}: {}x{} -> {}x{}",
+                            int_factor,
+                            pixel_width,
+                            pixel_height,
+                            aligned_pixel_width,
+                            aligned_pixel_height
+                        );
+                        pixel_width = aligned_pixel_width;
+                        pixel_height = aligned_pixel_height;
                     }
                 }
 
